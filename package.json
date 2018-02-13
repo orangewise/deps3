@@ -1,7 +1,7 @@
 {
   "name": "deps3",
   "description": "Dependency manager for private npm modules on s3",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "main": "index.js",
   "scripts": {
     "test": "standard && tape test/test-*.js"
