@@ -1,13 +1,16 @@
 
-Usage: deps3 <command> <tarball>
+Usage: deps3 <command> <tarball|package>
 
 Commands:
 
   publish
+  install
 
 Tarball:    tarball created with npm pack
+Package:    package you want to install
 
 
 Examples:
 
   deps3 publish some-package-0.1.1.tgz
+  deps3 install some-package@0.1.1

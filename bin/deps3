@@ -4,10 +4,14 @@ const index = require('../.')
 const run = cli.parse()
 
 if (run && run.command === 'publish') {
-  index.publish(run.tarball, (e, r) => {
-    if (e) {
-      console.error(e)
-      process.exit(1)
-    }
-  })
+  index.publish(run.tarball, cb)
+} else if (run && run.command === 'install') {
+  index.install(run.package, cb)
+}
+
+function cb (e, r) {
+  if (e) {
+    console.error(e)
+    process.exit(1)
+  }
 }

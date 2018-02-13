@@ -10,61 +10,56 @@ const join = path.join
 const semver = require('semver')
 const concat = require('concat-stream')
 const sortObj = require('sort-object')
+const tar = require('tar-fs')
+const gunzip = require('gunzip-maybe')
 
 // Publish a tarball to s3:
 // - fetch the index from s3 and update it
+// - upload the tarball
+// - upload the index
 exports.publish = publish
 function publish (file, cb) {
-  const modSpec = spec(file)
-  getS3Index(modSpec, bucket, (e, i) => {
+  const spec = specFromTarball(file)
+  getS3Index(spec, bucket, (e, i) => {
     if (e) return cb && cb(e)
 
     // construct index
-    const index = specIndex(modSpec, i)
+    const index = specIndex(spec, i)
     d('publish')(index)
-    return uploadTarballAndUpdateIndex(modSpec, bucket, file, index, cb)
+    return uploadTarballAndUpdateIndex(spec, bucket, file, index, cb)
   })
 }
 
 exports.install = install
-function install (spec, index) {
+function install (pkg, cb) {
   // retrieve the index and
   // pick the latest version that satisfies
-  d('install')(spec)
-  const version = spec[Object.keys(spec)[0]]
-  d('install')('version', version)
-  return getTarball(version, index)
+  d('install')(pkg)
+  const spec = specFromPkg(pkg)
+  getS3Index(spec, bucket, (e, i) => {
+    if (e) return cb && cb(e)
+    const version = spec[Object.keys(spec)[0]]
+    const pkg = Object.keys(spec)[0]
+
+    d('install')('version', version, i)
+    const tarball = getTarball(version, i)
+    if (!tarball) return cb && cb(new Error(`${JSON.stringify(spec)} not found`))
+    d('install-tarball')(tarball)
+    return downloadTarballAndInstall(pkg, tarball, cb)
+  })
 }
 
-// const request = require('request')
-// const tar = require('tar-fs')
-// const gunzip = require('gunzip-maybe')
-// const npmrc = require('../../utils/npmrc')
-
-// module.exports = (pkg, cwd) => {
-//   const options = {
-//     url: pkg.tarball,
-//     headers: {
-//       'User-Agent': npmrc.userAgent
-//     }
-//   }
-//   return new Promise((resolve, reject) => {
-//     const extract = tar.extract(cwd, {strip: 1})
-//     extract.on('finish', () => {
-//       resolve()
-//     })
-//     request.get(options)
-//       .pipe(gunzip())
-//       .pipe(extract)
-//       .on('error', reject)
-//   })
-// }
-
 exports.getTarball = getTarball
-function getTarball (version, index) {
-  const i = index || { index: 'from s3' }
+function getTarball (requestedVersion, index) {
+  const i = index
   const latestVersion = i['dist-tags'].latest
   d('install-latestVersion')(latestVersion)
+
+  const version = (requestedVersion === 'latest')
+    ? latestVersion
+    : requestedVersion
+  d('install-version')(version)
+
   let tarball
   if (semver.satisfies(latestVersion, version)) {
     d('install')('latest version satisfies!')
@@ -73,6 +68,7 @@ function getTarball (version, index) {
     // loop through versions, descending
     const versions = sortObj(i.versions, { sortOrder: 'DESC' })
     d('install-loop')(versions)
+
     Object.keys(versions).some(v => {
       d('install-loop')(v)
       if (semver.satisfies(v, version)) {
@@ -85,8 +81,22 @@ function getTarball (version, index) {
   return tarball
 }
 
-exports.spec = spec
-function spec (file) {
+exports.specFromPkg = specFromPkg
+function specFromPkg (pkg) {
+  d('specFromPkg')(pkg)
+  const s = {}
+  const semverIndex = (pkg.lastIndexOf('@') > 0)
+    ? pkg.lastIndexOf('@')
+    : pkg.length
+  const mod = pkg.substring(0, semverIndex)
+  const version = pkg.substring(semverIndex + 1, pkg.length)
+  s[mod] = version || 'latest'
+  d('specFromPkg')(s)
+  return s
+}
+
+exports.specFromTarball = specFromTarball
+function specFromTarball (file) {
   // only tarballs can be published
   if (path.extname(file) !== '.tgz') return
   const basename = path.basename(file, 'tgz')
@@ -168,11 +178,12 @@ function getS3Index (spec, bucket, cb) {
 exports.uploadTarballAndUpdateIndex = uploadTarballAndUpdateIndex
 function uploadTarballAndUpdateIndex (spec, bucket, file, index, cb) {
   d('upload-tarball')(spec, file, index)
+  const tarball = path.basename(file)
   const pkg = Object.keys(spec)[0]
   let body = fs.createReadStream(join(process.cwd(), file))
   const tarballParams = {
     Bucket: bucket,
-    Key: `${pkg}/-/${file}`,
+    Key: `${pkg}/-/${tarball}`,
     Body: body
   }
   d('upload-tarball-tarballParams')(tarballParams.Bucket, tarballParams.Key)
@@ -190,5 +201,28 @@ function uploadTarballAndUpdateIndex (spec, bucket, file, index, cb) {
       if (e) return cb(e)
       cb && cb()
     })
+  })
+}
+
+function downloadTarballAndInstall (pkg, tarball, cb) {
+  d('downloadTarballAndInstall-tarball')(tarball)
+  const basename = path.basename(tarball)
+  const params = {
+    Bucket: bucket,
+    Key: `${pkg}/-/${basename}`
+  }
+  d('downloadTarballAndInstall')(params)
+  const extract = tar.extract(join(process.cwd(), 'tmp'), { strip: 1 })
+  extract.on('finish', () => {
+    d('download-extract-finish')(tarball)
+    return cb(null, tarball)
+  })
+  const readStream = s3.getObject(params).createReadStream()
+  readStream
+    .pipe(gunzip())
+    .pipe(extract)
+  readStream.on('error', (e) => {
+    d('downloadTarballAndInstall-error')(e)
+    return cb(e)
   })
 }

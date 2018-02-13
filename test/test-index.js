@@ -21,12 +21,18 @@ function s3 () {
   self.upload = upload
   function getObject (p) {
     d('mock-s3-getObject')(p)
-    return {
-      createReadStream: createReadStream
-    }
+    let stream = {}
+    if (p.Key.indexOf('index.json') > -1) stream.createReadStream = readStreamIndex
+    if (p.Key.indexOf('.tgz') > -1) stream.createReadStream = readStreamTgz
+    return stream
   }
-  function createReadStream () {
+  function readStreamIndex () {
     const i = join(__dirname, 'fixtures', 'index.json')
+    d('mock-createReadStream')(i)
+    return fs.createReadStream(i)
+  }
+  function readStreamTgz () {
+    const i = join(__dirname, 'fixtures', 'debug-3.1.0.tgz')
     d('mock-createReadStream')(i)
     return fs.createReadStream(i)
   }
@@ -77,19 +83,34 @@ test('specIndex', t => {
 
 test('spec', t => {
   t.plan(3)
-  t.deepEqual(index.spec('bla-0.0.1.tgz'), { bla: '0.0.1' }, 'spec 1 looks good')
-  t.deepEqual(index.spec('bla-die-bla-10.0.10.tgz'), { 'bla-die-bla': '10.0.10' }, 'spec 2 looks good')
-  t.deepEqual(index.spec('bla-0.0.1'), undefined, 'only tarballs are processed')
+  t.deepEqual(index.specFromTarball('bla-0.0.1.tgz'), { bla: '0.0.1' }, 'spec 1 looks good')
+  t.deepEqual(index.specFromTarball('bla-die-bla-10.0.10.tgz'), { 'bla-die-bla': '10.0.10' }, 'spec 2 looks good')
+  t.deepEqual(index.specFromTarball('bla-0.0.1'), undefined, 'only tarballs are processed')
 })
 
-test('tarball', t => {
+test('install', t => {
   t.plan(3)
-  let installTarball = index.install({ 'apichef-automation': '10.26.0' }, fixtures.index2)
-  t.equal(installTarball, 's3://apichef-npm-deps/bla/-/bla-10.26.0.tgz', '1 - correct tarball selected')
-  installTarball = index.install({ 'apichef-automation': '0.0.2' }, fixtures.index2)
-  t.equal(installTarball, 's3://apichef-npm-deps/bla/-/bla-0.0.2.tgz', '2 - correct tarball selected')
-  installTarball = index.install({ 'apichef-automation': '0.0.10' }, fixtures.index2)
-  t.equal(installTarball, undefined, '3 - correct tarball not found')
+  index.install('apichef-automation@10.26.0', (e, r) => {
+    t.equal(r, 's3://apichef-npm-deps/bla/-/bla-10.26.0.tgz', '1 - correct tarball selected')
+  })
+  index.install('apichef-automation@0.0.2', (e, r) => {
+    t.equal(r, 's3://apichef-npm-deps/bla/-/bla-0.0.2.tgz', '2 - correct tarball selected')
+  })
+  index.install('apichef-automation@0.0.10', (e, r) => {
+    t.deepEqual(e, new Error(`${JSON.stringify({ 'apichef-automation': '0.0.10' })} not found`), '3 - correct tarball not found')
+  })
+})
+
+test('specFromPkg', t => {
+  t.plan(4)
+  let spec = index.specFromPkg('apichef-automation@10.26.0')
+  t.deepEqual(spec, { 'apichef-automation': '10.26.0' }, '1 - ok')
+  spec = index.specFromPkg('apichef-automation@0.0.2')
+  t.deepEqual(spec, { 'apichef-automation': '0.0.2' }, '2 - ok')
+  spec = index.specFromPkg('apichef-automation@latest')
+  t.deepEqual(spec, { 'apichef-automation': 'latest' }, '3 - ok')
+  spec = index.specFromPkg('apichef-automation')
+  t.deepEqual(spec, { 'apichef-automation': 'latest' }, '4 - ok')
 })
 
 test('publish', t => {

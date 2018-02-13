@@ -1,1 +1,13 @@
-{}
+{
+  "dist-tags": {
+    "lastest": "10.26.0"
+  },
+  "versions": {
+    "10.26.0": {
+      "tarball": "s3://apichef-npm-deps/bla/-/bla-10.26.0.tgz"
+    },
+    "0.0.2": {
+      "tarball": "s3://apichef-npm-deps/bla/-/bla-0.0.2.tgz"
+    }
+  }
+}
