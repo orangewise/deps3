@@ -1,0 +1,10 @@
+#!/usr/bin/env node
+
+const index = require('../.')
+
+index.publish('some-package-3.0.1.tgz', (e, r) => {
+  if (e) {
+    console.error(e)
+    process.exit(1)
+  }
+})

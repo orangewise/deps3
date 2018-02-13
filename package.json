@@ -1,0 +1,38 @@
+{
+  "name": "deps3",
+  "description": "Dependency manager for private npm modules on s3",
+  "version": "0.0.1",
+  "main": "index.js",
+  "scripts": {
+    "test": "standard && tape test/test-*.js"
+  },
+  "bin": {
+    "deps": "./bin/deps3"
+  },
+  "author": "Ronald Luitwieler",
+  "dependencies": {
+    "aws-sdk": "^2.192.0",
+    "concat-stream": "^1.6.0",
+    "debug": "^3.1.0",
+    "semver": "^5.5.0",
+    "sort-object": "^3.0.2"
+  },
+  "devDependencies": {
+    "proxyquire": "^1.8.0",
+    "standard": "^10.0.3",
+    "tape": "^4.8.0"
+  },
+  "license": "ISC",
+  "directories": {
+    "test": "test"
+  },
+  "keywords": [
+    "codebuild",
+    "s3",
+    "npm",
+    "private",
+    "modules",
+    "package",
+    "manager"
+  ]
+}
