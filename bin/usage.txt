@@ -1,0 +1,13 @@
+
+Usage: deps3 <command> <tarball>
+
+Commands:
+
+  publish
+
+Tarball:    tarball created with npm pack
+
+
+Examples:
+
+  deps3 publish some-package-0.1.1.tgz
