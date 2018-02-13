@@ -34,5 +34,13 @@
     "modules",
     "package",
     "manager"
-  ]
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orangewise/deps3.git"
+  },
+  "bugs": {
+    "url": "https://github.com/orangewise/deps3/issues"
+  },
+  "homepage": "https://github.com/orangewise/deps3#readme"
 }
