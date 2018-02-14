@@ -1,5 +1,6 @@
 process.env.AWS_PROFILE = process.env.AWS_PROFILE || 'apichef'
 const bucket = process.env.AWS_DEPS3_BUCKET || 'apichef-npm-deps'
+const target = process.env.DEPS3_TARGET || 'node_modules'
 
 const d = require('debug')
 const AWS = require('aws-sdk')
@@ -11,6 +12,7 @@ const semver = require('semver')
 const concat = require('concat-stream')
 const sortObj = require('sort-object')
 const tar = require('tar-fs')
+// const spawn = require('child_process').spawn
 const gunzip = require('gunzip-maybe')
 
 // Publish a tarball to s3:
@@ -212,10 +214,11 @@ function downloadTarballAndInstall (pkg, tarball, cb) {
     Key: `${pkg}/-/${basename}`
   }
   d('downloadTarballAndInstall')(params)
-  const extract = tar.extract(join(process.cwd(), 'tmp'), { strip: 1 })
+  const cwd = join(process.cwd(), target, pkg)
+  const extract = tar.extract(cwd, { strip: 1 })
   extract.on('finish', () => {
     d('download-extract-finish')(tarball)
-    return cb(null, tarball)
+    return runScripts(cwd, tarball, cb)
   })
   const readStream = s3.getObject(params).createReadStream()
   readStream
@@ -225,4 +228,31 @@ function downloadTarballAndInstall (pkg, tarball, cb) {
     d('downloadTarballAndInstall-error')(e)
     return cb(e)
   })
+}
+
+function runScripts (cwd, tarball, cb) {
+  d('run-scripts?')(cwd)
+  const pkg = require(join(cwd, 'package.json'))
+  if (!pkg.scripts || (
+    pkg.scripts.preinstall &&
+    pkg.scripts.install &&
+    pkg.scripts.postinstall
+  )) return cb(null, tarball)
+  return runner(cwd, pkg, tarball, cb)
+}
+
+function runner (cwd, pkg, tarball, cb) {
+  d('run-scripts-runner')(cwd)
+  const scripts = pkg.scripts
+  d('run-scripts-runner-scripts')(scripts)
+  const key = 'install'
+  var cmds = Object.keys(scripts).filter((script) => {
+    return script === 'pre' + key ||
+      script === key ||
+      script === 'post' + key
+  }).map((script) => {
+    return scripts[script]
+  })
+  d('run-scripts-runner-cmds')(cmds)
+  return cb(null, tarball)
 }

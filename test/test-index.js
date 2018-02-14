@@ -5,6 +5,7 @@ const join = require('path').join
 const fixtures = require('./fixtures/indexes')
 
 // Start stubbing
+process.env.DEPS3_TARGET = 'tmp'
 const proxyquire = require('proxyquire')
 const index = proxyquire('../.', {
   'aws-sdk': {
@@ -88,7 +89,7 @@ test('spec', t => {
   t.deepEqual(index.specFromTarball('bla-0.0.1'), undefined, 'only tarballs are processed')
 })
 
-test('install', t => {
+test('install', { timeout: 5000 }, t => {
   t.plan(3)
   index.install('apichef-automation@10.26.0', (e, r) => {
     t.equal(r, 's3://apichef-npm-deps/bla/-/bla-10.26.0.tgz', '1 - correct tarball selected')
