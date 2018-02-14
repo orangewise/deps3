@@ -8,7 +8,7 @@ const fixtures = require('./fixtures/indexes')
 process.env.DEPS3_TARGET = 'tmp'
 const proxyquire = require('proxyquire')
 const index = proxyquire('../.', {
-  'aws-sdk': {
+  './lib/aws': {
     S3: s3
   },
   fs: {

@@ -1,9 +1,5 @@
-process.env.AWS_PROFILE = process.env.AWS_PROFILE || 'apichef'
-const bucket = process.env.AWS_DEPS3_BUCKET || 'apichef-npm-deps'
-const target = process.env.DEPS3_TARGET || 'node_modules'
-
 const d = require('debug')
-const AWS = require('aws-sdk')
+const AWS = require('./lib/aws')
 const s3 = new AWS.S3()
 const fs = require('fs')
 const path = require('path')
@@ -22,13 +18,13 @@ const gunzip = require('gunzip-maybe')
 exports.publish = publish
 function publish (file, cb) {
   const spec = specFromTarball(file)
-  getS3Index(spec, bucket, (e, i) => {
+  getS3Index(spec, AWS.bucket, (e, i) => {
     if (e) return cb && cb(e)
 
     // construct index
     const index = specIndex(spec, i)
     d('publish')(index)
-    return uploadTarballAndUpdateIndex(spec, bucket, file, index, cb)
+    return uploadTarballAndUpdateIndex(spec, AWS.bucket, file, index, cb)
   })
 }
 
@@ -38,7 +34,7 @@ function install (pkg, cb) {
   // pick the latest version that satisfies
   d('install')(pkg)
   const spec = specFromPkg(pkg)
-  getS3Index(spec, bucket, (e, i) => {
+  getS3Index(spec, AWS.bucket, (e, i) => {
     if (e) return cb && cb(e)
     const version = spec[Object.keys(spec)[0]]
     const pkg = Object.keys(spec)[0]
@@ -139,7 +135,7 @@ function specIndex (spec, index) {
     theIndex['dist-tags'].latest = latest
     theIndex.versions = versions
     theIndex.versions[thisVersion] = {}
-    theIndex.versions[thisVersion].tarball = `s3://${bucket}/${k}/-/${tarball}`
+    theIndex.versions[thisVersion].tarball = `s3://${AWS.bucket}/${k}/-/${tarball}`
     theIndex.versions = sortObj(theIndex.versions)
     d('specIndex')(theIndex.versions)
   })
@@ -210,11 +206,11 @@ function downloadTarballAndInstall (pkg, tarball, cb) {
   d('downloadTarballAndInstall-tarball')(tarball)
   const basename = path.basename(tarball)
   const params = {
-    Bucket: bucket,
+    Bucket: AWS.bucket,
     Key: `${pkg}/-/${basename}`
   }
   d('downloadTarballAndInstall')(params)
-  const cwd = join(process.cwd(), target, pkg)
+  const cwd = join(process.cwd(), AWS.target, pkg)
   const extract = tar.extract(cwd, { strip: 1 })
   extract.on('finish', () => {
     d('download-extract-finish')(tarball)
