@@ -216,11 +216,13 @@ function downloadTarballAndInstall (pkg, tarball, cb) {
     d('downloadTarballerror')(e)
     return cb(e)
   })
-  readStream.on('finish', () => {
-    d('downloadTarball')('finish')
+  readStream.on('finish', install)
+  readStream.on('close', install)
+  function install () {
+    d('downloadTarball')('close-or-finish')
     if (process.env.DEPS3_SKIP_INSTALL) return cb(null, basename)
     return npmInstall(basename, cb)
-  })
+  }
 }
 
 function npmInstall (tarball, cb) {

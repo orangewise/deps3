@@ -90,14 +90,14 @@ test('spec', t => {
 })
 
 test('install', { timeout: 60000 }, t => {
-  t.plan(2)
+  t.plan(3)
   process.env.DEPS3_SKIP_INSTALL = 'true'
-  index.install('apichef-automation@10.26.0', (e, r) => {
-    t.equal(r, 's3://apichef-npm-deps/bla/-/bla-10.26.0.tgz', '1 - correct tarball selected')
+  index.install('bla@10.26.0', (e, r) => {
+    t.equal(r, 'bla-10.26.0.tgz', '1 - correct tarball selected')
   })
-  // index.install('apichef-automation@0.0.2', (e, r) => {
-  //   t.equal(r, 's3://apichef-npm-deps/bla/-/bla-0.0.2.tgz', '2 - correct tarball selected')
-  // })
+  index.install('bla@0.0.2', (e, r) => {
+    t.equal(r, 'bla-0.0.2.tgz', '1 - correct tarball selected')
+  })
   index.install('apichef-automation@0.0.10', (e, r) => {
     t.deepEqual(e, new Error(`${JSON.stringify({ 'apichef-automation': '0.0.10' })} not found`), '3 - correct tarball not found')
   })
