@@ -1,6 +1,7 @@
 deps3
 ======
 Publish to and install private module from an s3 bucket.
+Installation of the tarball is delegated to npm so make sure it is installed.
 
 # Installation
 
@@ -10,12 +11,20 @@ npm i -g deps3
 
 # Usage
 
-## Publishing
+## Publish
 
 ```bash
 export AWS_PROFILE='apichef'
 export AWS_DEPS3_BUCKET='bla'
 deps3 publish <your bundled module>.tgz
+```
+
+## Install
+
+```bash
+export AWS_PROFILE='apichef'
+export AWS_DEPS3_BUCKET='bla'
+deps3 install <your-module-on-s3@latest>
 ```
 
 ## Proxy

@@ -7,9 +7,7 @@ const join = path.join
 const semver = require('semver')
 const concat = require('concat-stream')
 const sortObj = require('sort-object')
-const tar = require('tar-fs')
-// const spawn = require('child_process').spawn
-const gunzip = require('gunzip-maybe')
+const spawn = require('child_process').spawn
 
 // Publish a tarball to s3:
 // - fetch the index from s3 and update it
@@ -210,45 +208,34 @@ function downloadTarballAndInstall (pkg, tarball, cb) {
     Key: `${pkg}/-/${basename}`
   }
   d('downloadTarballAndInstall')(params)
-  const cwd = join(process.cwd(), AWS.target, pkg)
-  const extract = tar.extract(cwd, { strip: 1 })
-  extract.on('finish', () => {
-    d('download-extract-finish')(tarball)
-    return runScripts(cwd, tarball, cb)
-  })
+  const writeStream = fs.createWriteStream(basename)
   const readStream = s3.getObject(params).createReadStream()
   readStream
-    .pipe(gunzip())
-    .pipe(extract)
+    .pipe(writeStream)
   readStream.on('error', (e) => {
-    d('downloadTarballAndInstall-error')(e)
+    d('downloadTarballerror')(e)
     return cb(e)
   })
-}
-
-function runScripts (cwd, tarball, cb) {
-  d('run-scripts?')(cwd)
-  const pkg = require(join(cwd, 'package.json'))
-  if (!pkg.scripts || (
-    pkg.scripts.preinstall &&
-    pkg.scripts.install &&
-    pkg.scripts.postinstall
-  )) return cb(null, tarball)
-  return runner(cwd, pkg, tarball, cb)
-}
-
-function runner (cwd, pkg, tarball, cb) {
-  d('run-scripts-runner')(cwd)
-  const scripts = pkg.scripts
-  d('run-scripts-runner-scripts')(scripts)
-  const key = 'install'
-  var cmds = Object.keys(scripts).filter((script) => {
-    return script === 'pre' + key ||
-      script === key ||
-      script === 'post' + key
-  }).map((script) => {
-    return scripts[script]
+  readStream.on('finish', () => {
+    d('downloadTarball')('finish')
+    if (process.env.DEPS3_SKIP_INSTALL) return cb(null, basename)
+    return npmInstall(basename, cb)
   })
-  d('run-scripts-runner-cmds')(cmds)
-  return cb(null, tarball)
+}
+
+function npmInstall (tarball, cb) {
+  d('npm-install')('start')
+  const env = Object.assign({}, process.env)
+  const script = spawn('npm', ['install', tarball], { cwd: process.cwd(), shell: true, env: env })
+  script.stdout.on('data', (data) => {
+    d('npm-install-stdout')(data.toString())
+  })
+  script.stderr.on('data', (data) => {
+    d('npm-install-stderr')(data.toString())
+  })
+  script.on('error', cb)
+  script.on('close', (data) => {
+    d('npm-install-close')(data)
+    return cb(null, tarball)
+  })
 }
