@@ -15,7 +15,9 @@ const spawn = require('child_process').spawn
 // - upload the index
 exports.publish = publish
 function publish (file, cb) {
-  const spec = specFromTarball(file)
+  const dir = path.dirname(file)
+  const pkgName = require(join(process.cwd(), dir, 'package.json')).name
+  const spec = specFromTarball(pkgName, file)
   getS3Index(spec, AWS.bucket, (e, i) => {
     if (e) return cb && cb(e)
 
@@ -92,12 +94,12 @@ function specFromPkg (pkg) {
 }
 
 exports.specFromTarball = specFromTarball
-function specFromTarball (file) {
+function specFromTarball (pkg, file) {
   // only tarballs can be published
   if (path.extname(file) !== '.tgz') return
   const basename = path.basename(file, 'tgz')
   d('spec')(basename)
-  const semverIndex = basename.lastIndexOf('-')
+  const semverIndex = pkg.length // basename.lastIndexOf('-')
   const mod = basename.substring(0, semverIndex)
   const version = basename.substring(semverIndex + 1, basename.length - 1)
   const s = {}

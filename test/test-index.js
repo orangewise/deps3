@@ -83,10 +83,11 @@ test('specIndex', t => {
 })
 
 test('spec', t => {
-  t.plan(3)
-  t.deepEqual(index.specFromTarball('bla-0.0.1.tgz'), { bla: '0.0.1' }, 'spec 1 looks good')
-  t.deepEqual(index.specFromTarball('bla-die-bla-10.0.10.tgz'), { 'bla-die-bla': '10.0.10' }, 'spec 2 looks good')
-  t.deepEqual(index.specFromTarball('bla-0.0.1'), undefined, 'only tarballs are processed')
+  t.plan(4)
+  t.deepEqual(index.specFromTarball('bla', 'bla-0.0.1.tgz'), { bla: '0.0.1' }, 'spec 1 looks good')
+  t.deepEqual(index.specFromTarball('bla-die-bla', 'bla-die-bla-10.0.10.tgz'), { 'bla-die-bla': '10.0.10' }, 'spec 2 looks good')
+  t.deepEqual(index.specFromTarball('bla-die-bla', 'bla-die-bla-10.0.10-0.tgz'), { 'bla-die-bla': '10.0.10-0' }, 'spec 3 looks good')
+  t.deepEqual(index.specFromTarball('bla', 'bla-0.0.1'), undefined, 'only tarballs are processed')
 })
 
 test('install', { timeout: 60000 }, t => {
