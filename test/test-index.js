@@ -45,7 +45,7 @@ function s3 () {
 // End stubbing
 
 test('specIndex', t => {
-  t.plan(2)
+  t.plan(3)
   let spec = {
     'apichef-automation': '5.26.0'
   }
@@ -80,6 +80,26 @@ test('specIndex', t => {
   }
   const i2 = index.specIndex(spec, fixtures.index1)
   t.deepEqual(i2, expected, '2 - index looks good')
+
+  // pre<versions>
+  spec = {
+    'apichef-automation': '8.26.1-0'
+  }
+  expected = {
+    _id: 'apichef-automation',
+    name: 'apichef-automation',
+    'dist-tags':
+      { latest: '8.26.1-0' },
+    versions: {
+      '0.0.1': { tarball: 's3://apichef-npm-deps/bla/-/bla-0.0.1.tgz' },
+      '0.0.2': { tarball: 's3://apichef-npm-deps/bla/-/bla-0.0.2.tgz' },
+      '5.26.0': { tarball: 's3://apichef-npm-deps/apichef-automation/-/apichef-automation-5.26.0.tgz' },
+      '8.26.0': { tarball: 's3://apichef-npm-deps/apichef-automation/-/apichef-automation-8.26.0.tgz' },
+      '8.26.1-0': { tarball: 's3://apichef-npm-deps/apichef-automation/-/apichef-automation-8.26.1-0.tgz' }
+    }
+  }
+  const i3 = index.specIndex(spec, fixtures.index1)
+  t.deepEqual(i3, expected, '3 - index looks good')
 })
 
 test('spec', t => {

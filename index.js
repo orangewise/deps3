@@ -111,7 +111,8 @@ function specFromTarball (pkg, file) {
 // construct the package index
 exports.specIndex = specIndex
 function specIndex (spec, index) {
-  d('specIndex')('-index', index)
+  d('specIndex-spec')(spec)
+  d('specIndex-index')(index)
   let theIndex = Object.assign(index)
   Object.keys(spec).forEach(k => {
     const thisVersion = spec[k]
