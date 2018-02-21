@@ -96,15 +96,16 @@ function specFromPkg (pkg) {
 exports.specFromTarball = specFromTarball
 function specFromTarball (pkg, file) {
   // only tarballs can be published
+  d('spec-pkg')(pkg)
   if (path.extname(file) !== '.tgz') return
   const basename = path.basename(file, 'tgz')
-  d('spec')(basename)
+  d('spec-basename')(basename)
   const semverIndex = pkg.length // basename.lastIndexOf('-')
   const mod = basename.substring(0, semverIndex)
   const version = basename.substring(semverIndex + 1, basename.length - 1)
   const s = {}
   s[mod] = version
-  d('spec')(s)
+  d('spec->')(s)
   return s
 }
 

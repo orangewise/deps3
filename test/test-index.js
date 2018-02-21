@@ -143,3 +143,11 @@ test('publish', t => {
     t.deepEqual(r, undefined, '1 - ok')
   })
 })
+
+test('publish pre<version>', t => {
+  t.plan(2)
+  index.publish('test/fixtures/apichef-automation-5.26.1-0.tgz', (e, r) => {
+    t.equal(e, undefined, '1 - no error found')
+    t.deepEqual(r, undefined, '1 - ok')
+  })
+})
