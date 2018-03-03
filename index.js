@@ -37,13 +37,23 @@ function install (pkg, cb) {
   getS3Index(spec, AWS.bucket, (e, i) => {
     if (e) return cb && cb(e)
     const version = spec[Object.keys(spec)[0]]
+    d('install-version')(version)
     const pkg = Object.keys(spec)[0]
 
-    d('install')('version', version, i)
-    const tarball = getTarball(version, i)
-    if (!tarball) return cb && cb(new Error(`${JSON.stringify(spec)} not found`))
-    d('install-tarball')(tarball)
-    return downloadTarballAndInstall(pkg, tarball, cb)
+    const installed = installedVersion(pkg)
+    if (
+      !installed ||
+      installed !== i['dist-tags'].latest
+    ) {
+      d('install')('version', version, i)
+      const tarball = getTarball(version, i)
+      if (!tarball) return cb && cb(new Error(`${JSON.stringify(spec)} not found`))
+      d('install-tarball')(tarball)
+      return downloadTarballAndInstall(pkg, tarball, cb)
+    } else {
+      d('install-installed')(installed, 'satisfies')
+      return cb()
+    }
   })
 }
 
@@ -244,4 +254,15 @@ function npmInstall (tarball, cb) {
     d('npm-install-close')(data)
     return cb(null, tarball)
   })
+}
+
+function installedVersion (pkg) {
+  let version
+  try {
+    version = require(join(process.cwd(), 'node_modules', pkg, 'package.json')).version
+  } catch (e) {
+    d('installedVersion-error')(e)
+  }
+  d('installedVersion')(version)
+  return version
 }

@@ -4,10 +4,17 @@ Usage: deps3 <command> <tarball|package>
 Commands:
 
   publish
+
+            Publish a package to your private s3 bucket.
+
   install
 
-Tarball:    tarball created with npm pack
-Package:    package you want to install
+            Install a package from your private s3 bucket
+            if the package is not yet installed in your local
+            node_modules folder.
+
+tarball:    tarball created with npm pack
+package:    package you want to install
 
 
 Examples:
