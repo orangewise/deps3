@@ -41,9 +41,9 @@ export http_proxy=http://....
 deps3 <command> <tarball|package>
 ```
 
-[npm-badge]: https://badge.fury.io/js/run-forrest-run.svg
-[npm-url]: https://badge.fury.io/js/run-forrest-run
-[travis-badge]: https://travis-ci.org/orangewise/run-forrest-run.svg?branch=master
-[travis-url]: https://travis-ci.org/orangewise/run-forrest-run
+[npm-badge]: https://badge.fury.io/js/deps3.svg
+[npm-url]: https://badge.fury.io/js/deps3
+[travis-badge]: https://travis-ci.org/orangewise/deps3.svg?branch=master
+[travis-url]: https://travis-ci.org/orangewise/deps3
 [standardjs-badge]: https://img.shields.io/badge/code%20style-standard-brightgreen.svg
 [standardjs-url]: http://standardjs.com/
